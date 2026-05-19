@@ -4,7 +4,7 @@ class MockController:
 
     def get_action(self):
         action = input(
-            "Simulate controller action (LEFT/RIGHT/UP/DOWN): "
+            "Simulate controller action (LEFT/RIGHT/UP): "
         )
 
         return action.strip().upper()
