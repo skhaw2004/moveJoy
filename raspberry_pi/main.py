@@ -1,51 +1,91 @@
 import random
+
 from display import GameDisplay
-from controller_interface import MockController
+from controller_interface import IMUController
+# from controller_interface import KeyboardController
+
 
 def main():
-    print("NEW MAIN FILE RUNNING")
+    print("MoveJoy starting...")
 
     display = GameDisplay()
-    controller = MockController()
+
+    # CHANGE THIS to your real serial port
+    controller = IMUController(
+    port="/dev/tty.usbmodem3101"
+    )
+
+    # For keyboard testing instead of IMU:
+    # controller = KeyboardController()
 
     actions = ["LEFT", "RIGHT", "UP"]
+
     sequence_length = 5
     score = 0
 
-    # Generate full sequence
-    sequence = [random.choice(actions) for _ in range(sequence_length)]
+    # Generate random sequence
+    sequence = [
+        random.choice(actions)
+        for _ in range(sequence_length)
+    ]
 
-    display.show_message("Get Ready!", duration=2)
+    # Intro screen
+    display.show_message(
+        "Get Ready!",
+        duration=2
+    )
 
-    # Convert sequence into one string
+    # Show full sequence
     sequence_text = "   ".join(sequence)
 
-    # Show ALL actions together for 5 seconds
-    display.show_message(sequence_text, duration=5)
+    display.show_message(
+        sequence_text,
+        duration=5
+    )
 
-    # Hide sequence
-    display.show_message("Now repeat the sequence", duration=2)
+    # Prompt user
+    display.show_message(
+        "Repeat the sequence",
+        duration=2
+    )
 
-    # User inputs answers one by one
+    # Read gestures one by one
     for i, expected_action in enumerate(sequence):
 
         display.show_message(
-            f"Input action {i + 1} of {sequence_length}",
+            f"Action {i + 1} of {sequence_length}",
             duration=1
         )
 
-        user_action = controller.get_action()
+        user_action = controller.get_action(
+            timeout=5
+        )
+
+        print("Expected:", expected_action)
+        print("User:", user_action)
 
         if user_action == expected_action:
             score += 1
 
+            display.show_message(
+                "Correct!",
+                duration=1
+            )
+
+        else:
+            display.show_message(
+                f"Wrong! {user_action}",
+                duration=1
+            )
+
     # Final score
     display.show_message(
-        f"Final Score: {score}/{sequence_length}",
+        f"Score: {score}/{sequence_length}",
         duration=3
     )
 
     display.close()
+
 
 if __name__ == "__main__":
     main()

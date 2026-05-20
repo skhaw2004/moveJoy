@@ -1,6 +1,7 @@
 import pygame
 import time
 
+
 class GameDisplay:
 
     def __init__(self, width=800, height=600):
@@ -10,14 +11,24 @@ class GameDisplay:
         self.width = width
         self.height = height
 
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = pygame.display.set_mode(
+            (width, height)
+        )
 
         pygame.display.set_caption("MoveJoy")
 
         self.clock = pygame.time.Clock()
 
-        self.font_big = pygame.font.SysFont("Arial", 80, bold=True)
-        self.font_small = pygame.font.SysFont("Arial", 36)
+        self.font_big = pygame.font.SysFont(
+            "Arial",
+            80,
+            bold=True
+        )
+
+        self.font_small = pygame.font.SysFont(
+            "Arial",
+            36
+        )
 
     def handle_events(self):
 
@@ -31,17 +42,33 @@ class GameDisplay:
 
         self.screen.fill((30, 30, 30))
 
-    def draw_center_text(self, text, font, color=(255, 255, 255)):
+    def draw_center_text(
+        self,
+        text,
+        font,
+        color=(255, 255, 255)
+    ):
 
-        rendered = font.render(text, True, color)
+        rendered = font.render(
+            text,
+            True,
+            color
+        )
 
         rect = rendered.get_rect(
-            center=(self.width // 2, self.height // 2)
+            center=(
+                self.width // 2,
+                self.height // 2
+            )
         )
 
         self.screen.blit(rendered, rect)
 
-    def show_message(self, message, duration=1.5):
+    def show_message(
+        self,
+        message,
+        duration=1.5
+    ):
 
         start = time.time()
 
@@ -60,7 +87,11 @@ class GameDisplay:
 
             self.clock.tick(60)
 
-    def show_action(self, action, duration=2):
+    def show_action(
+        self,
+        action,
+        duration=2
+    ):
 
         start = time.time()
 
