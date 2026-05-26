@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoveJoy – A Memory Dance Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFE8A3; --white: #ffffff; --navy: #1a2f5a;
+    --pink: #F2547D; --teal: #7FD8C8; --yellow: #FFD166;
+    --orange: #F4A227; --card-bg: #FFF5CC; --gray-text: #8899aa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: 'Nunito', sans-serif; color: var(--navy); overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  .card {
+    background: var(--white); border: 4px solid var(--navy); border-radius: 32px;
+    padding: 40px 50px; max-width: 860px; width: 100%;
+    box-shadow: 8px 8px 0 var(--navy); position: relative; text-align: center;
+    animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .title-move { font-family: 'Fredoka One', cursive; font-size: 72px; color: var(--teal); line-height: 1; }
+  .title-joy  { font-family: 'Fredoka One', cursive; font-size: 72px; color: var(--pink); line-height: 1; }
+  .subtitle   { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--navy); margin: 6px 0 28px; }
+  .section-title { font-family: 'Fredoka One', cursive; font-size: 38px; color: var(--pink); margin-bottom: 24px; }
+  .section-title.teal { color: var(--teal); }
+
+  .btn { display: inline-block; font-family: 'Fredoka One', cursive; font-size: 22px; letter-spacing: 1px; border: none; border-radius: 50px; padding: 14px 48px; cursor: pointer; transition: transform .15s, box-shadow .15s; margin: 8px; }
+  .btn:hover  { transform: translateY(-3px); box-shadow: 4px 6px 0 var(--navy); }
+  .btn:active { transform: translateY(0);   box-shadow: 2px 3px 0 var(--navy); }
+  .btn-teal   { background: var(--teal);   color: var(--navy);  box-shadow: 3px 4px 0 var(--navy); }
+  .btn-pink   { background: var(--pink);   color: var(--white); box-shadow: 3px 4px 0 var(--navy); }
+  .btn-yellow { background: var(--yellow); color: var(--navy);  box-shadow: 3px 4px 0 var(--navy); }
+
+  /* Home */
+  #screen-home .game-logo { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 8px; }
+  #screen-home .mascots   { display: flex; justify-content: center; gap: 24px; margin-bottom: 14px; }
+  #screen-home .mascot    { font-size: 60px; animation: bounce 1.8s ease-in-out infinite; }
+  #screen-home .mascot:nth-child(2) { animation-delay: .3s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+  /* Login */
+  .player-row { display: flex; align-items: center; gap: 14px; margin: 14px auto; max-width: 420px; }
+  .player-badge { width: 52px; height: 52px; border-radius: 50%; background: var(--teal); color: var(--white); font-family: 'Fredoka One', cursive; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 3px solid var(--navy); }
+  .player-input { flex: 1; background: var(--pink); border: 3px solid var(--navy); border-radius: 50px; padding: 12px 24px; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); outline: none; }
+  .player-input::placeholder { color: rgba(255,255,255,.7); }
+
+  /* Difficulty */
+  .diff-grid { display: flex; flex-direction: column; gap: 14px; max-width: 500px; margin: 0 auto; text-align: left; }
+  .diff-row  { display: flex; align-items: center; gap: 14px; }
+  .diff-btn  { font-family: 'Fredoka One', cursive; font-size: 20px; border: 3px solid var(--navy); border-radius: 16px; padding: 12px 28px; cursor: pointer; min-width: 160px; transition: transform .15s, box-shadow .15s; }
+  .diff-btn:hover  { transform: translateY(-3px); box-shadow: 4px 5px 0 var(--navy); }
+  .diff-btn.easy   { background: var(--teal);   color: var(--navy);  box-shadow: 3px 4px 0 var(--navy); }
+  .diff-btn.medium { background: var(--yellow);  color: var(--navy);  box-shadow: 3px 4px 0 var(--navy); }
+  .diff-btn.hard   { background: var(--pink);   color: var(--white); box-shadow: 3px 4px 0 var(--navy); }
+  .diff-desc { background: #e8f7f4; border: 2px solid #c0e8e0; border-radius: 12px; padding: 10px 20px; font-size: 16px; color: var(--gray-text); }
+  .icon-box  { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
+  .icon-btn  { width: 54px; height: 54px; border-radius: 14px; background: var(--yellow); border: 3px solid var(--navy); font-size: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 3px 0 var(--navy); transition: transform .15s; }
+  .icon-btn:hover { transform: scale(1.1); }
+
+  /* IMU connect */
+  .imu-section { margin-top: 20px; padding: 16px; background: var(--card-bg); border: 2px solid var(--navy); border-radius: 16px; }
+  .imu-section-title { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--navy); margin-bottom: 12px; }
+  .imu-row { display: flex; align-items: center; gap: 12px; justify-content: center; margin: 8px 0; }
+  .imu-dot { width: 16px; height: 16px; border-radius: 50%; background: #ccc; border: 2px solid var(--navy); flex-shrink: 0; }
+  .imu-dot.connected { background: #4CAF50; }
+  .imu-dot.waiting   { background: var(--yellow); animation: blink 1s ease-in-out infinite; }
+  .imu-status-text { font-family: 'Nunito', sans-serif; font-size: 15px; color: var(--gray-text); flex: 1; text-align: left; }
+  .btn-small { font-family: 'Fredoka One', cursive; font-size: 16px; border: 2px solid var(--navy); border-radius: 50px; padding: 8px 24px; cursor: pointer; box-shadow: 2px 3px 0 var(--navy); transition: transform .15s; background: var(--teal); color: var(--navy); }
+  .btn-small:hover { transform: translateY(-2px); }
+
+  /* Countdown */
+  #screen-countdown .countdown-number { font-family: 'Fredoka One', cursive; font-size: 160px; color: var(--pink); line-height: 1; animation: pulseBig 1s ease-in-out infinite; }
+  @keyframes pulseBig { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.1); } }
+
+  /* Gesture arrow */
+  .gesture-arrow { font-size: 56px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; border-radius: 16px; border: 3px solid var(--navy); margin: 0 auto; font-weight: bold; }
+  .gesture-arrow.LEFT  { background: var(--pink);   color: var(--white); }
+  .gesture-arrow.RIGHT { background: var(--teal);   color: var(--navy);  }
+  .gesture-arrow.UP    { background: var(--yellow); color: var(--navy);  }
+  .gesture-arrow.empty { background: #eee; color: #bbb; }
+
+  /* Memorise */
+  .pose-cards-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .pose-card { background: var(--card-bg); border: 3px solid var(--navy); border-radius: 20px; padding: 12px; width: 130px; text-align: center; box-shadow: 3px 4px 0 var(--navy); }
+  .pose-card .pose-num { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--navy); margin-bottom: 8px; }
+
+  /* Timer badge */
+  .timer-badge { position: absolute; top: 18px; left: 18px; background: var(--pink); color: var(--white); font-family: 'Fredoka One', cursive; font-size: 24px; width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--navy); display: flex; align-items: center; justify-content: center; box-shadow: 2px 3px 0 var(--navy); }
+  .timer-badge.done { background: #ccc; }
+
+  /* Pose screen */
+  .expected-wrap { margin: 8px 0 16px; }
+  .expected-label { font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--gray-text); margin-bottom: 8px; }
+  .two-col { display: flex; gap: 24px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .player-card { background: var(--card-bg); border: 3px solid var(--navy); border-radius: 20px; padding: 20px; min-width: 200px; flex: 1; max-width: 280px; box-shadow: 3px 4px 0 var(--navy); }
+  .player-card .p-label { font-family: 'Fredoka One', cursive; font-size: 26px; color: var(--navy); margin-bottom: 10px; }
+  .input-status { margin-top: 10px; font-family: 'Fredoka One', cursive; font-size: 18px; min-height: 28px; }
+  .input-status.waiting  { color: var(--gray-text); animation: blink 1s ease-in-out infinite; }
+  .input-status.received { color: #2e7d32; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Pose result */
+  .compare-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0; }
+  .compare-label { font-family: 'Fredoka One', cursive; font-size: 14px; color: var(--gray-text); width: 80px; text-align: right; }
+  .result-badge { margin-top: 14px; display: inline-block; background: var(--teal); border: 3px solid var(--navy); border-radius: 30px; padding: 6px 20px; font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--navy); }
+  .result-badge.correct { background: var(--teal); }
+  .result-badge.wrong   { background: var(--pink); color: var(--white); }
+  .result-badge.missed  { background: #ccc; }
+
+  /* Final results */
+  .score-circles { display: flex; gap: 40px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 20px 0; }
+  .score-col { text-align: center; }
+  .score-label { font-family: 'Fredoka One', cursive; font-size: 26px; color: var(--pink); margin-bottom: 12px; }
+  .score-circle { width: 130px; height: 130px; border-radius: 50%; border: 5px solid var(--navy); background: var(--card-bg); display: flex; align-items: center; justify-content: center; font-family: 'Fredoka One', cursive; font-size: 44px; color: var(--pink); margin: 0 auto 12px; box-shadow: 4px 5px 0 var(--navy); }
+  .winner-tag { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--teal); }
+  .almost-tag { font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--gray-text); }
+
+  /* Leaderboard */
+  .lb-list { list-style: none; margin-top: 10px; }
+  .lb-list li { display: flex; align-items: center; gap: 14px; background: var(--card-bg); border: 2px solid var(--navy); border-radius: 50px; padding: 10px 24px; margin-bottom: 12px; font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--navy); box-shadow: 2px 3px 0 var(--navy); animation: slideIn .3s ease both; }
+  .lb-list li:nth-child(1){ animation-delay:.05s } .lb-list li:nth-child(2){ animation-delay:.1s }
+  .lb-list li:nth-child(3){ animation-delay:.15s } .lb-list li:nth-child(4){ animation-delay:.2s }
+  .lb-list li:nth-child(5){ animation-delay:.25s }
+  @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .lb-rank { font-size: 22px; width: 34px; text-align: center; }
+
+  /* Spin wheel */
+  .wheel-wrap { position: relative; width: 260px; height: 260px; margin: 0 auto 24px; }
+  #wheel-canvas { border-radius: 50%; border: 5px solid var(--navy); box-shadow: 4px 5px 0 var(--navy); }
+  .wheel-pointer { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 36px; }
+  #spin-result { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--pink); min-height: 30px; margin-top: 10px; }
+
+  /* Nav */
+  #nav-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(255,255,255,.8); border: 2px solid var(--navy); border-radius: 50px; padding: 8px 16px; z-index: 100; backdrop-filter: blur(6px); }
+  .nav-dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; border: 2px solid var(--navy); cursor: pointer; transition: background .2s, transform .2s; }
+  .nav-dot.active { background: var(--pink); transform: scale(1.3); }
+
+  .flower { font-size: 28px; position: absolute; pointer-events: none; }
+  .fl-tl { top: 18px; left: 18px; } .fl-tr { top: 14px; right: 14px; } .fl-br { bottom: 14px; right: 14px; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: HOME -->
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <span class="flower fl-tl">❄️</span><span class="flower fl-tr">🌼</span><span class="flower fl-br">❄️</span>
+    <div class="mascots" style="display:flex;justify-content:center;gap:24px;margin-bottom:14px">
+      <span style="font-size:60px;animation:bounce 1.8s ease-in-out infinite">👵</span>
+      <span style="font-size:60px;animation:bounce 1.8s ease-in-out infinite;animation-delay:.3s">👴</span>
+    </div>
+    <div class="game-logo"><span class="title-move">MOVE</span><span class="title-joy">JOY</span></div>
+    <p class="subtitle">A MEMORY DANCE GAME</p>
+    <button class="btn btn-teal" onclick="setMode('solo'); goTo('screen-login')">PLAY SOLO</button>
+    <button class="btn btn-pink" onclick="setMode('1v1');  goTo('screen-login')">PLAY 1v1</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOGIN -->
+<div id="screen-login" class="screen">
+  <div class="card">
+    <span class="flower fl-tl">❄️</span><span class="flower fl-tr">🌼</span>
+    <h1 class="section-title teal" style="font-size:52px">LOGIN!</h1>
+    <p style="font-family:'Fredoka One',cursive;color:var(--pink);font-size:22px;margin-bottom:28px">ENTER YOUR NAME 😊</p>
+    <div class="player-row">
+      <div class="player-badge">P1</div>
+      <input class="player-input" type="text" placeholder="Name:" id="p1-name" value="Player 1">
+    </div>
+    <div class="player-row" id="p2-name-row">
+      <div class="player-badge">P2</div>
+      <input class="player-input" type="text" placeholder="Name:" id="p2-name" value="Player 2">
+    </div>
+    <br>
+    <button class="btn btn-pink" onclick="goTo('screen-difficulty')">NEXT →</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: DIFFICULTY + IMU CONNECT -->
+<div id="screen-difficulty" class="screen">
+  <div class="card">
+    <span class="flower fl-tl">❄️</span>
+    <div class="icon-box">
+      <div class="icon-btn" onclick="goTo('screen-leaderboard')">🏆</div>
+    </div>
+    <h2 class="section-title">CHOOSE DIFFICULTY</h2>
+    <div class="diff-grid">
+      <div class="diff-row">
+        <button class="diff-btn easy"   onclick="startGame('easy')">EASY</button>
+        <span class="diff-desc">⏱️ 10s to memorise</span>
+      </div>
+      <div class="diff-row">
+        <button class="diff-btn medium" onclick="startGame('medium')">MEDIUM</button>
+        <span class="diff-desc">⏱️ 7s to memorise</span>
+      </div>
+      <div class="diff-row">
+        <button class="diff-btn hard"   onclick="startGame('hard')">HARD</button>
+        <span class="diff-desc">⏱️ 5s to memorise</span>
+      </div>
+    </div>
+    <div class="imu-section">
+      <div class="imu-section-title">🎮 CONNECT YOUR IMU</div>
+      <div class="imu-row">
+        <div class="imu-dot" id="p1-dot"></div>
+        <span class="imu-status-text" id="p1-imu-status">P1 — Not connected</span>
+        <button class="btn-small" onclick="connectIMU(1)">Connect P1</button>
+      </div>
+      <div class="imu-row" id="p2-imu-row">
+        <div class="imu-dot" id="p2-dot"></div>
+        <span class="imu-status-text" id="p2-imu-status">P2 — Not connected</span>
+        <button class="btn-small" onclick="connectIMU(2)">Connect P2</button>
+      </div>
+      <p style="font-size:13px;color:var(--gray-text);margin-top:10px">💡 No IMU? Use ← → ↑ keys (P1) and A / D / W keys (P2)</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 4: COUNTDOWN -->
+<div id="screen-countdown" class="screen">
+  <div class="card">
+    <h2 class="section-title">GET READY!</h2>
+    <div class="countdown-number" id="countdown-num">3</div>
+  </div>
+</div>
+
+<!-- SCREEN 5: MEMORISE -->
+<div id="screen-memorise" class="screen">
+  <div class="card">
+    <div class="timer-badge" id="mem-timer">7</div>
+    <h2 class="section-title">MEMORISE THIS PATTERN!</h2>
+    <div class="pose-cards-row" id="memorise-cards"></div>
+  </div>
+</div>
+
+<!-- SCREEN 6: POSE TIME -->
+<div id="screen-pose" class="screen">
+  <div class="card">
+    <div class="timer-badge" id="pose-timer">5</div>
+    <h2 class="section-title" style="margin-bottom:4px">POSE TIME!</h2>
+    <p style="font-family:'Fredoka One',cursive;font-size:26px;color:var(--pink);margin-bottom:8px" id="pose-label">POSE 1 of 5</p>
+    <div class="two-col">
+      <div class="player-card">
+        <div class="p-label" id="pose-p1-name">P1</div>
+        <div class="gesture-arrow empty" id="pose-p1-arrow">?</div>
+        <div class="input-status waiting" id="pose-p1-status">Waiting...</div>
+      </div>
+      <div class="player-card" id="pose-p2-card">
+        <div class="p-label" id="pose-p2-name">P2</div>
+        <div class="gesture-arrow empty" id="pose-p2-arrow">?</div>
+        <div class="input-status waiting" id="pose-p2-status">Waiting...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 7: POSE RESULT -->
+<div id="screen-pose-result" class="screen">
+  <div class="card">
+    <div class="timer-badge done">✓</div>
+    <h2 class="section-title">HOW YOU DID!</h2>
+    <div class="two-col">
+      <div class="player-card">
+        <div class="p-label" id="res-p1-name">P1</div>
+        <div id="res-p1-compare"></div>
+        <div class="result-badge" id="res-p1-badge"></div>
+      </div>
+      <div class="player-card" id="res-p2-card">
+        <div class="p-label" id="res-p2-name">P2</div>
+        <div id="res-p2-compare"></div>
+        <div class="result-badge" id="res-p2-badge"></div>
+      </div>
+    </div>
+    <br>
+    <button class="btn btn-teal" id="next-btn" onclick="nextAfterResult()">NEXT POSE →</button>
+  </div>
+</div>
+
+<!-- SCREEN 8: FINAL RESULTS -->
+<div id="screen-results" class="screen">
+  <div class="card">
+    <h2 class="section-title" style="font-size:48px">RESULTS! 🎉</h2>
+    <div class="score-circles" id="final-score-circles"></div>
+    <button class="btn btn-pink"   onclick="goTo('screen-leaderboard')">LEADERBOARD 🏆</button>
+    <button class="btn btn-teal"   onclick="goTo('screen-spin')">SPIN THE WHEEL 🎡</button>
+    <button class="btn btn-yellow" onclick="goTo('screen-home')">🏠 PLAY AGAIN</button>
+  </div>
+</div>
+
+<!-- SCREEN 9: LEADERBOARD -->
+<div id="screen-leaderboard" class="screen">
+  <div class="card">
+    <span class="flower fl-tl">❄️</span><span class="flower fl-tr">🌼</span>
+    <h2 class="section-title">WEEKLY LEADERBOARD! 🏆</h2>
+    <ul class="lb-list" id="lb-list">
+      <li style="justify-content:center;color:var(--gray-text)">Loading...</li>
+    </ul>
+    <button class="btn btn-yellow" onclick="goTo('screen-spin')">SPIN YOUR DAILY WHEEL 🎡</button>
+    <button class="btn btn-teal"   onclick="goTo('screen-home')">🏠 HOME</button>
+  </div>
+</div>
+
+<!-- SCREEN 10: SPIN WHEEL -->
+<div id="screen-spin" class="screen">
+  <div class="card">
+    <h2 class="section-title">YOUR DAILY SPIN!</h2>
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheel-canvas" width="260" height="260"></canvas>
+    </div>
+    <div id="spin-result"></div>
+    <br>
+    <button class="btn btn-pink" id="spin-btn" onclick="spinWheel()">SPIN! 🎰</button>
+    <br><br>
+    <button class="btn btn-teal" onclick="goTo('screen-home')">🏠 HOME</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="nav-bar">
+  <div class="nav-dot active" onclick="goTo('screen-home')"></div>
+  <div class="nav-dot" onclick="goTo('screen-login')"></div>
+  <div class="nav-dot" onclick="goTo('screen-difficulty')"></div>
+  <div class="nav-dot" onclick="goTo('screen-memorise')"></div>
+  <div class="nav-dot" onclick="goTo('screen-pose')"></div>
+  <div class="nav-dot" onclick="goTo('screen-results')"></div>
+  <div class="nav-dot" onclick="goTo('screen-leaderboard')"></div>
+  <div class="nav-dot" onclick="goTo('screen-spin')"></div>
+</div>
+
+<script>
+// ── NAV ──────────────────────────────────────────────────────────────────────
+const dotScreens = ['screen-home','screen-login','screen-difficulty','screen-memorise','screen-pose','screen-results','screen-leaderboard','screen-spin'];
+const dots = document.querySelectorAll('.nav-dot');
+
+function goTo(id) {
+  if (poseTimerInterval) { clearInterval(poseTimerInterval); poseTimerInterval = null; }
+  waitingForGesture = false;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  dots.forEach((d,i) => d.classList.toggle('active', dotScreens[i] === id));
+  syncModeUI();
+  if (id === 'screen-leaderboard') loadLeaderboard();
+}
+
+// ── GAME STATE ────────────────────────────────────────────────────────────────
+let gameMode = 'solo';
+let poseSequence   = [];
+let poseIndex      = 0;
+let p1Score = 0, p2Score = 0;
+let poseGestures   = { 1: null, 2: null };
+let waitingForGesture = false;
+let poseTimerInterval = null;
+let currentDiff    = 'easy';
+
+const GESTURES = ['LEFT','RIGHT','UP'];
+const ARROW    = { LEFT:'←', RIGHT:'→', UP:'↑' };
+
+function setMode(m) { gameMode = m; }
+function p1Name()   { return document.getElementById('p1-name').value || 'P1'; }
+function p2Name()   { return document.getElementById('p2-name').value || 'P2'; }
+
+function syncModeUI() {
+  const show = gameMode === '1v1';
+  ['p2-name-row','p2-imu-row','pose-p2-card','res-p2-card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+
+// ── SERIAL / IMU ──────────────────────────────────────────────────────────────
+let p1Reader = null, p2Reader = null;
+
+async function connectIMU(player) {
+  if (!('serial' in navigator)) {
+    alert('Web Serial not supported. Open this file in Chrome.');
+    return;
+  }
+  const status = document.getElementById(`p${player}-imu-status`);
+  try {
+    const port = await navigator.serial.requestPort();
+    status.textContent = `P${player} — Opening port...`;
+    await port.open({ baudRate: 115200 });
+    readIMU(player, port);
+  } catch(e) {
+    status.textContent = `P${player} — Error: ${e.message}`;
+    console.error('Serial connect error:', e);
+  }
+}
+
+async function readIMU(player, port) {
+  const dot    = document.getElementById(`p${player}-dot`);
+  const status = document.getElementById(`p${player}-imu-status`);
+
+  // Mark as connected immediately — "READY" is only sent on Arduino boot
+  // and is likely already missed by the time the user connects
+  dot.className = 'imu-dot connected';
+  status.textContent = `P${player} — Connected ✓`;
+
+  const reader = port.readable.getReader();
+  if (player === 1) p1Reader = reader; else p2Reader = reader;
+
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const raw of lines) {
+        const msg = raw.trim();
+        if (GESTURES.includes(msg)) handleGesture(player, msg);
+      }
+    }
+  } catch(e) {
+    dot.className = 'imu-dot';
+    status.textContent = `P${player} — Disconnected`;
+  } finally { reader.releaseLock(); }
+}
+
+// ── GESTURE INPUT ─────────────────────────────────────────────────────────────
+function handleGesture(player, gesture) {
+  if (!waitingForGesture) return;
+  if (poseGestures[player] !== null) return;
+  poseGestures[player] = gesture;
+
+  // Show answered confirmation without revealing the gesture
+  const statusEl = document.getElementById(`pose-p${player}-status`);
+  if (statusEl) { statusEl.className = 'input-status received'; statusEl.textContent = 'Answered ✓'; }
+
+  // Auto-advance once all active players have answered
+  const allAnswered = poseGestures[1] !== null && (gameMode === 'solo' || poseGestures[2] !== null);
+  if (allAnswered) {
+    if (poseTimerInterval) { clearInterval(poseTimerInterval); poseTimerInterval = null; }
+    waitingForGesture = false;
+    scorePose();
+    showPoseResult();
+  }
+}
+
+// Keyboard fallback — P1: arrow keys, P2: A/D/W
+document.addEventListener('keydown', e => {
+  if (!waitingForGesture) return;
+  const map1 = { ArrowLeft:'LEFT', ArrowRight:'RIGHT', ArrowUp:'UP' };
+  const map2 = { a:'LEFT', A:'LEFT', d:'RIGHT', D:'RIGHT', w:'UP', W:'UP' };
+  if (map1[e.key]) handleGesture(1, map1[e.key]);
+  if (map2[e.key]) handleGesture(2, map2[e.key]);
+});
+
+// ── GAME FLOW ─────────────────────────────────────────────────────────────────
+function startGame(diff) {
+  currentDiff = diff;
+  p1Score = 0; p2Score = 0;
+  poseIndex = 0;
+  poseSequence = Array.from({length:5}, () => GESTURES[Math.floor(Math.random()*3)]);
+
+  // stamp player names
+  document.getElementById('pose-p1-name').textContent = p1Name();
+  document.getElementById('pose-p2-name').textContent = p2Name();
+  document.getElementById('res-p1-name').textContent  = p1Name();
+  document.getElementById('res-p2-name').textContent  = p2Name();
+  syncModeUI();
+
+  goTo('screen-countdown');
+  let n = 3;
+  const el = document.getElementById('countdown-num');
+  el.textContent = n;
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(iv); startMemorise(); return; }
+    el.textContent = n;
+  }, 1000);
+}
+
+function startMemorise() {
+  // Render pose cards with arrows
+  const container = document.getElementById('memorise-cards');
+  container.innerHTML = '';
+  poseSequence.forEach((g, i) => {
+    container.innerHTML += `
+      <div class="pose-card">
+        <div class="pose-num">${i+1}</div>
+        <div class="gesture-arrow ${g}" style="width:80px;height:80px;font-size:44px;margin:0 auto">${ARROW[g]}</div>
+      </div>`;
+  });
+
+  goTo('screen-memorise');
+  const secs = currentDiff === 'easy' ? 10 : currentDiff === 'medium' ? 7 : 5;
+  let t = secs;
+  const el = document.getElementById('mem-timer');
+  el.textContent = t;
+  const iv = setInterval(() => {
+    t--;
+    el.textContent = t;
+    if (t <= 0) { clearInterval(iv); startPosePhase(); }
+  }, 1000);
+}
+
+function startPosePhase() {
+  poseIndex = 0;
+  goTo('screen-pose');
+  showPose();
+}
+
+function showPose() {
+  if (poseIndex >= poseSequence.length) { showFinalResults(); return; }
+
+  const expected = poseSequence[poseIndex];
+  poseGestures = { 1: null, 2: null };
+  waitingForGesture = false; // briefly blocked to flush any buffered serial data
+  setTimeout(() => { waitingForGesture = true; }, 800);
+
+  document.getElementById('pose-label').textContent = `POSE ${poseIndex+1} of ${poseSequence.length}`;
+
+
+  // Reset player displays
+  [1,2].forEach(p => {
+    const a = document.getElementById(`pose-p${p}-arrow`);
+    const s = document.getElementById(`pose-p${p}-status`);
+    if (a) { a.className = 'gesture-arrow empty'; a.textContent = '?'; }
+    if (s) { s.className = 'input-status waiting'; s.textContent = 'Waiting...'; }
+  });
+
+  let t = 5;
+  const timerEl = document.getElementById('pose-timer');
+  timerEl.className = 'timer-badge';
+  timerEl.textContent = t;
+
+  poseTimerInterval = setInterval(() => {
+    t--;
+    timerEl.textContent = t;
+    if (t <= 0) {
+      clearInterval(poseTimerInterval);
+      poseTimerInterval = null;
+      waitingForGesture = false;
+      scorePose();
+      showPoseResult();
+    }
+  }, 1000);
+}
+
+function scorePose() {
+  const expected = poseSequence[poseIndex];
+  if (poseGestures[1] === expected) p1Score++;
+  if (gameMode === '1v1' && poseGestures[2] === expected) p2Score++;
+}
+
+function showPoseResult() {
+  const expected = poseSequence[poseIndex];
+  renderCompare('res-p1-compare','res-p1-badge', expected, poseGestures[1]);
+  if (gameMode === '1v1') renderCompare('res-p2-compare','res-p2-badge', expected, poseGestures[2]);
+
+  const isLast = poseIndex >= poseSequence.length - 1;
+  document.getElementById('next-btn').textContent = isLast ? 'SEE FINAL RESULTS →' : 'NEXT POSE →';
+  goTo('screen-pose-result');
+}
+
+function renderCompare(compareId, badgeId, expected, got) {
+  const gotArrow = got ? `<div class="gesture-arrow ${got}" style="width:70px;height:70px;font-size:38px">${ARROW[got]}</div>`
+                       : `<div class="gesture-arrow empty" style="width:70px;height:70px;font-size:32px">✗</div>`;
+  document.getElementById(compareId).innerHTML = `
+    <div class="compare-row">
+      <span class="compare-label">EXPECTED</span>
+      <div class="gesture-arrow ${expected}" style="width:70px;height:70px;font-size:38px">${ARROW[expected]}</div>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">YOUR MOVE</span>
+      ${gotArrow}
+    </div>`;
+
+  const badge = document.getElementById(badgeId);
+  if (got === expected)      { badge.className = 'result-badge correct'; badge.textContent = '⭐⭐⭐ PERFECT!'; }
+  else if (!got)             { badge.className = 'result-badge missed';  badge.textContent = 'MISSED!'; }
+  else                       { badge.className = 'result-badge wrong';   badge.textContent = 'WRONG!'; }
+}
+
+function nextAfterResult() {
+  poseIndex++;
+  if (poseIndex >= poseSequence.length) {
+    showFinalResults();
+  } else {
+    goTo('screen-pose');
+    showPose();
+  }
+}
+
+function showFinalResults() {
+  const total = poseSequence.length;
+  const circles = document.getElementById('final-score-circles');
+
+  const scoreTag = (score) => {
+    if (score === total) return '🏆 PERFECT!';
+    if (score >= total - 1) return '⭐ GREAT!';
+    return '💪 KEEP GOING!';
+  };
+
+  if (gameMode === 'solo') {
+    circles.innerHTML = `
+      <div class="score-col">
+        <div class="score-label">${p1Name()}</div>
+        <div class="score-circle">${p1Score}/${total}</div>
+        <div class="winner-tag">${scoreTag(p1Score)}</div>
+      </div>`;
+  } else {
+    const p1Wins = p1Score > p2Score, draw = p1Score === p2Score;
+    circles.innerHTML = `
+      <div class="score-col">
+        <div class="score-label">${p1Name()}</div>
+        <div class="score-circle">${p1Score}/${total}</div>
+        <div class="${p1Wins||draw?'winner-tag':'almost-tag'}">${p1Wins?'🏆 WINNER!':draw?'🤝 DRAW!':'ALMOST THERE!'}</div>
+      </div>
+      <div style="font-size:60px;animation:bounce 1.5s ease-in-out infinite">🎉</div>
+      <div class="score-col">
+        <div class="score-label">${p2Name()}</div>
+        <div class="score-circle">${p2Score}/${total}</div>
+        <div class="${!p1Wins||draw?'winner-tag':'almost-tag'}">${!p1Wins&&!draw?'🏆 WINNER!':draw?'🤝 DRAW!':'ALMOST THERE!'}</div>
+      </div>`;
+  }
+  saveScoresToServer();
+  goTo('screen-results');
+}
+
+// ── SERVER API ────────────────────────────────────────────────────────────────
+const API = 'http://localhost:3000';
+
+async function saveScoresToServer() {
+  const total = poseSequence.length;
+  const saves = [{ name: p1Name(), score: p1Score }];
+  if (gameMode === '1v1') saves.push({ name: p2Name(), score: p2Score });
+  for (const { name, score } of saves) {
+    try {
+      await fetch(`${API}/api/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score, sequenceLength: total, difficulty: currentDiff })
+      });
+    } catch(e) { console.warn('Could not save score:', e); }
+  }
+}
+
+async function loadLeaderboard() {
+  const list = document.getElementById('lb-list');
+  const ranks = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  try {
+    const res = await fetch(`${API}/api/leaderboard`);
+    const rows = await res.json();
+    if (rows.length === 0) {
+      list.innerHTML = '<li style="justify-content:center;color:var(--gray-text)">No scores yet — play a game first!</li>';
+      return;
+    }
+    list.innerHTML = rows.map((r, i) => `
+      <li>
+        <span class="lb-rank">${ranks[i] || i + 1}</span>
+        <span style="font-size:24px">🧑</span>
+        ${r.name}
+        <span style="font-size:15px;color:var(--gray-text);margin-left:auto">${r.score}/${r.sequence_length} · ${r.difficulty}</span>
+      </li>`).join('');
+  } catch(e) {
+    list.innerHTML = '<li style="justify-content:center;color:var(--gray-text)">Could not connect to server</li>';
+  }
+}
+
+// ── SPIN WHEEL ────────────────────────────────────────────────────────────────
+const prizes = ['Try again!','Better luck next time!','You win a $5 NTUC voucher!','Try again!','Better luck next time!','Thanks for playing!'];
+const wColors = ['#7FD8C8','#F2547D','#FFD166','#4A90D9','#F4A227','#c8e6c9'];
+let spinning = false, currentAngle = 0;
+
+function drawWheel(angle) {
+  const c = document.getElementById('wheel-canvas');
+  const ctx = c.getContext('2d');
+  const cx = 130, cy = 130, r = 120, arc = (2*Math.PI)/prizes.length;
+  ctx.clearRect(0,0,260,260);
+  prizes.forEach((p,i) => {
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r, angle+i*arc, angle+(i+1)*arc);
+    ctx.closePath(); ctx.fillStyle = wColors[i]; ctx.fill();
+    ctx.strokeStyle='#1a2f5a'; ctx.lineWidth=2; ctx.stroke();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(angle+i*arc+arc/2);
+    ctx.textAlign='right'; ctx.fillStyle='#1a2f5a'; ctx.font='bold 11px Nunito';
+    ctx.fillText(p, r-10, 5); ctx.restore();
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
+  ctx.fillStyle='#FFD166'; ctx.fill();
+  ctx.strokeStyle='#1a2f5a'; ctx.lineWidth=3; ctx.stroke();
+}
+drawWheel(0);
+
+function spinWheel() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spin-result').textContent = '';
+  document.getElementById('spin-btn').disabled = true;
+  const idx = Math.floor(Math.random()*prizes.length);
+  const arc = (2*Math.PI)/prizes.length;
+  const target = -(idx*arc) - arc/2 - Math.PI/2;
+  const total  = Math.PI*2*8 + ((target-currentAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const dur    = 3500, start = performance.now(), startA = currentAngle;
+  function frame(now) {
+    const t = Math.min((now-start)/dur, 1);
+    currentAngle = startA + total*(1-Math.pow(1-t,3));
+    drawWheel(currentAngle);
+    if (t < 1) { requestAnimationFrame(frame); return; }
+    spinning = false;
+    document.getElementById('spin-btn').disabled = false;
+    document.getElementById('spin-result').textContent = prizes[idx];
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+syncModeUI();
+</script>
+</body>
+</html>

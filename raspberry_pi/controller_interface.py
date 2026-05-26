@@ -1,82 +1,26 @@
-# controller_interface.py
-
 import time
 import serial
 
 
-class KeyboardController:
-
-    def get_action(self):
-
-        action = input(
-            "Type action (LEFT/RIGHT/UP): "
-        )
-
-        return action.strip().upper()
-
-
 class IMUController:
-
-    VALID_ACTIONS = {
-        "LEFT",
-        "RIGHT",
-        "UP"
-    }
-
-    def __init__(
-        self,
-        port,
-        baudrate=115200,
-        timeout=0.1
-    ):
-
-        self.ser = serial.Serial(
-            port,
-            baudrate=baudrate,
-            timeout=timeout
-        )
-
-        # Give ESP32 time to reset
-        time.sleep(2)
-
-        # Clear startup junk
+    def __init__(self, port, baudrate=115200, timeout=1):
+        self.ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
+        time.sleep(2)  # let the MCU reset
         self.ser.reset_input_buffer()
 
-    def get_action(self, timeout=5):
-
-        end_time = time.time() + timeout
-
-        while time.time() < end_time:
-
-            raw = self.ser.readline()
-
-            if not raw:
-                continue
-
-            line = raw.decode(
-                "utf-8",
-                errors="ignore"
-            ).strip().upper()
+    def get_action(self):
+        while True:
+            line = self.ser.readline().decode("utf-8", errors="ignore").strip()
 
             if not line:
                 continue
 
-            print("Serial:", line)
+            # Expected MCU output:
+            # DATA,LEFT,0.000000,2.829885,...
+            parts = line.split(",")
 
-            # If ESP32 prints exactly LEFT/RIGHT/UP
-            if line in self.VALID_ACTIONS:
-                return line
+            if len(parts) >= 2 and parts[0] == "DATA":
+                gesture = parts[1].strip().upper()
 
-            # If ESP32 prints:
-            # "Gesture detected: LEFT"
-            if "GESTURE DETECTED:" in line:
-
-                gesture = line.split(
-                    ":",
-                    1
-                )[1].strip()
-
-                if gesture in self.VALID_ACTIONS:
+                if gesture in {"LEFT", "RIGHT", "UP"}:
                     return gesture
-
-        return None

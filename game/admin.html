@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoveJoy – Caregiver Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #FFE8A3; --white: #ffffff; --navy: #1a2f5a;
+    --pink: #F2547D; --teal: #7FD8C8; --yellow: #FFD166;
+    --card-bg: #FFF5CC; --gray-text: #8899aa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: 'Nunito', sans-serif; color: var(--navy); min-height: 100vh; }
+
+  header {
+    background: var(--white); border-bottom: 4px solid var(--navy);
+    padding: 16px 32px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 4px 0 var(--navy);
+  }
+  header h1 { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--navy); }
+  header h1 span { color: var(--pink); }
+  header p { font-size: 14px; color: var(--gray-text); margin-top: 2px; }
+
+  .layout { display: flex; gap: 24px; padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* Player list */
+  .sidebar { width: 260px; flex-shrink: 0; }
+  .sidebar h2 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--navy); margin-bottom: 12px; }
+  .player-card {
+    background: var(--white); border: 3px solid var(--navy); border-radius: 16px;
+    padding: 14px 18px; margin-bottom: 10px; cursor: pointer;
+    box-shadow: 3px 3px 0 var(--navy); transition: transform .15s, box-shadow .15s;
+  }
+  .player-card:hover { transform: translateY(-2px); box-shadow: 3px 5px 0 var(--navy); }
+  .player-card.active { background: var(--teal); }
+  .player-card .p-name { font-family: 'Fredoka One', cursive; font-size: 18px; text-transform: capitalize; }
+  .player-card .p-meta { font-size: 13px; color: var(--gray-text); margin-top: 3px; }
+  .player-card.active .p-meta { color: var(--navy); }
+  .empty-state { color: var(--gray-text); font-size: 15px; text-align: center; padding: 20px; }
+
+  /* Main panel */
+  .main { flex: 1; }
+  .placeholder {
+    background: var(--white); border: 3px dashed #ccc; border-radius: 24px;
+    padding: 60px; text-align: center; color: var(--gray-text);
+    font-family: 'Fredoka One', cursive; font-size: 22px;
+  }
+
+  .stat-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
+    padding: 20px 24px; flex: 1; min-width: 140px; text-align: center;
+    box-shadow: 3px 3px 0 var(--navy);
+  }
+  .stat-card .s-label { font-size: 13px; color: var(--gray-text); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-card .s-value { font-family: 'Fredoka One', cursive; font-size: 36px; color: var(--navy); margin: 6px 0 2px; }
+  .stat-card .s-sub { font-size: 13px; color: var(--gray-text); }
+
+  .trend-badge {
+    display: inline-block; font-family: 'Fredoka One', cursive; font-size: 18px;
+    border: 3px solid var(--navy); border-radius: 50px; padding: 6px 20px;
+    box-shadow: 2px 2px 0 var(--navy);
+  }
+  .trend-badge.Improving { background: #c8f7c5; color: #1b5e20; }
+  .trend-badge.Stable    { background: var(--yellow); color: var(--navy); }
+  .trend-badge.Declining { background: var(--pink); color: var(--white); }
+  .trend-badge.Unknown   { background: #eee; color: var(--gray-text); }
+
+  .chart-card {
+    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
+    padding: 24px; margin-bottom: 20px; box-shadow: 3px 3px 0 var(--navy);
+  }
+  .chart-card h3 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--pink); margin-bottom: 16px; }
+
+  .history-card {
+    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
+    padding: 24px; box-shadow: 3px 3px 0 var(--navy);
+  }
+  .history-card h3 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--teal); margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-family: 'Fredoka One', cursive; font-size: 15px; color: var(--gray-text); padding: 6px 12px; border-bottom: 2px solid #eee; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  .diff-pill {
+    display: inline-block; font-size: 12px; font-weight: 700; border-radius: 50px;
+    padding: 2px 10px; text-transform: uppercase;
+  }
+  .diff-pill.easy   { background: var(--teal);   color: var(--navy); }
+  .diff-pill.medium { background: var(--yellow);  color: var(--navy); }
+  .diff-pill.hard   { background: var(--pink);   color: var(--white); }
+
+  .panel-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .panel-header h2 { font-family: 'Fredoka One', cursive; font-size: 28px; text-transform: capitalize; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MOVE<span>JOY</span> 🏥 Caregiver Dashboard</h1>
+    <p>Track player performance and cognitive trends over time</p>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Players</h2>
+    <div id="player-list"><p class="empty-state">Loading...</p></div>
+  </aside>
+
+  <main class="main" id="main-panel">
+    <div class="placeholder">👈 Select a player to view their performance</div>
+  </main>
+</div>
+
+<script>
+let trendChart = null;
+
+async function loadPlayers() {
+  const res = await fetch('/api/users');
+  const users = await res.json();
+  const list = document.getElementById('player-list');
+
+  if (users.length === 0) {
+    list.innerHTML = '<p class="empty-state">No players yet.<br>Play a game first!</p>';
+    return;
+  }
+
+  list.innerHTML = users.map(u => `
+    <div class="player-card" id="pc-${u.id}" onclick="loadStats(${u.id})">
+      <div class="p-name">🧑 ${u.name}</div>
+      <div class="p-meta">${u.session_count} session${u.session_count !== 1 ? 's' : ''} · ${u.last_played ? formatDate(u.last_played) : 'No sessions yet'}</div>
+    </div>`).join('');
+}
+
+async function loadStats(userId) {
+  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(`pc-${userId}`).classList.add('active');
+
+  const res = await fetch(`/api/users/${userId}/stats`);
+  const { user, sessions, stats } = await res.json();
+  const panel = document.getElementById('main-panel');
+
+  if (!stats) {
+    panel.innerHTML = `
+      <div class="panel-header"><h2>🧑 ${user.name}</h2></div>
+      <div class="placeholder">No sessions recorded yet for this player.</div>`;
+    return;
+  }
+
+  const trendEmoji = { Improving: '📈', Stable: '➡️', Declining: '📉' };
+
+  panel.innerHTML = `
+    <div class="panel-header">
+      <h2>🧑 ${user.name}</h2>
+      <span class="trend-badge ${stats.trend}">${trendEmoji[stats.trend] || ''} ${stats.trend}</span>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="s-label">Total Sessions</div>
+        <div class="s-value">${stats.totalSessions}</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Best Score</div>
+        <div class="s-value">${stats.bestScore}<span style="font-size:18px;color:var(--gray-text)">/${sessions[0].sequence_length}</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Avg Accuracy</div>
+        <div class="s-value">${Math.round(stats.avgAccuracy * 100)}<span style="font-size:20px">%</span></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Score Trend Over Time</h3>
+      <canvas id="trend-chart" height="100"></canvas>
+    </div>
+
+    <div class="history-card">
+      <h3>Session History</h3>
+      <table>
+        <thead><tr><th>#</th><th>Date</th><th>Score</th><th>Accuracy</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          ${[...sessions].reverse().map((s, i) => `
+            <tr>
+              <td>${sessions.length - i}</td>
+              <td>${formatDate(s.played_at)}</td>
+              <td>${s.score} / ${s.sequence_length}</td>
+              <td>${Math.round(s.score / s.sequence_length * 100)}%</td>
+              <td><span class="diff-pill ${s.difficulty}">${s.difficulty}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  renderChart(sessions);
+}
+
+function renderChart(sessions) {
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+  const labels = sessions.map((s, i) => `#${i + 1}`);
+  const accuracies = sessions.map(s => Math.round(s.score / s.sequence_length * 100));
+
+  trendChart = new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Accuracy %',
+        data: accuracies,
+        borderColor: '#F2547D',
+        backgroundColor: 'rgba(242,84,125,0.1)',
+        borderWidth: 3,
+        pointBackgroundColor: '#F2547D',
+        pointRadius: 5,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+loadPlayers();
+</script>
+</body>
+</html>

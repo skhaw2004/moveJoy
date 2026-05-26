@@ -1,0 +1,11 @@
+{
+  "name": "movejoy-game",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

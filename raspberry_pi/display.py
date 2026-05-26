@@ -1,115 +1,49 @@
-import pygame
 import time
+import tkinter as tk
 
 
 class GameDisplay:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("MoveJoy")
+        self.root.geometry("800x500")
+        self.root.configure(bg="white")
 
-    def __init__(self, width=800, height=600):
-
-        pygame.init()
-
-        self.width = width
-        self.height = height
-
-        self.screen = pygame.display.set_mode(
-            (width, height)
+        self.label = tk.Label(
+            self.root,
+            text="",
+            font=("Arial", 32, "bold"),
+            bg="white",
+            fg="black",
+            wraplength=760,
+            justify="center",
         )
+        self.label.pack(expand=True, fill="both")
+        self.root.update()
 
-        pygame.display.set_caption("MoveJoy")
+    def _refresh(self):
+        self.root.update_idletasks()
+        self.root.update()
 
-        self.clock = pygame.time.Clock()
+    def _sleep_with_updates(self, seconds):
+        end_time = time.time() + seconds
+        while time.time() < end_time:
+            self._refresh()
+            time.sleep(0.01)
 
-        self.font_big = pygame.font.SysFont(
-            "Arial",
-            80,
-            bold=True
-        )
+    def show_message(self, text, duration=0):
+        self.label.config(text=text, font=("Arial", 32, "bold"))
+        self._refresh()
 
-        self.font_small = pygame.font.SysFont(
-            "Arial",
-            36
-        )
+        if duration > 0:
+            self._sleep_with_updates(duration)
 
-    def handle_events(self):
-
-        for event in pygame.event.get():
-
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                raise SystemExit
+    def show_sequence(self, sequence, duration=5):
+        text = "   ".join(sequence)
+        self.label.config(text=text, font=("Arial", 36, "bold"))
+        self._refresh()
+        self._sleep_with_updates(duration)
 
     def clear(self):
-
-        self.screen.fill((30, 30, 30))
-
-    def draw_center_text(
-        self,
-        text,
-        font,
-        color=(255, 255, 255)
-    ):
-
-        rendered = font.render(
-            text,
-            True,
-            color
-        )
-
-        rect = rendered.get_rect(
-            center=(
-                self.width // 2,
-                self.height // 2
-            )
-        )
-
-        self.screen.blit(rendered, rect)
-
-    def show_message(
-        self,
-        message,
-        duration=1.5
-    ):
-
-        start = time.time()
-
-        while time.time() - start < duration:
-
-            self.handle_events()
-
-            self.clear()
-
-            self.draw_center_text(
-                message,
-                self.font_small
-            )
-
-            pygame.display.flip()
-
-            self.clock.tick(60)
-
-    def show_action(
-        self,
-        action,
-        duration=2
-    ):
-
-        start = time.time()
-
-        while time.time() - start < duration:
-
-            self.handle_events()
-
-            self.clear()
-
-            self.draw_center_text(
-                action,
-                self.font_big
-            )
-
-            pygame.display.flip()
-
-            self.clock.tick(60)
-
-    def close(self):
-
-        pygame.quit()
+        self.label.config(text="")
+        self._refresh()
