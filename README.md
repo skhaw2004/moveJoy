@@ -1,114 +1,109 @@
 # MoveJoy
 
-## 1. Title
-
-**MoveJoy**  
-Gamified Motion-Based Cognitive Monitoring System
+A gamified memory and rhythm game with motion gesture control and BLE controller support, designed for elderly cognitive monitoring.
 
 ---
 
-## 2. Team Name and Members
+## Requirements
 
-### Team Name
-Suancai Yu + 2 Jiaozi
+### Software
+- Node.js (v18+)
+- Python 3.9+
+- Google Chrome (for Web Bluetooth support)
+- PlatformIO (for flashing the ESP32 controller)
 
-### Members
-- Jadyn Choo Jia En (A0321244U)
-- Jereen Cheng (A0321991B)
-- Lee Yan Ying (A0320584H)
-- Khaw Zi Xiang Stuart (A0322454L)
+### Python packages
+```
+pip install -r requirements.txt
+```
 
----
-
-## 3. App Description
-
-### Project Goals
-
-MoveJoy is a gamified cognitive monitoring system designed for elderly users who may be at risk of Mild Cognitive Impairment (MCI).
-
-The system displays a sequence of actions on a projected screen, which users must memorise and replicate using motion-tracked handheld controllers or wristbands.
-
-The application analyses the user’s response accuracy, sequencing, and timing performance over repeated sessions to identify possible cognitive decline trends.
+### Node packages
+```
+cd game
+npm install
+```
 
 ---
 
-### Hardware
+## Hardware
 
-- Raspberry Pi (main processing unit)
-- Seeed Studio XIAO ESP32S3 (controller microcontroller)
-- LSM6DS3 IMU sensor (motion tracking)
-- Projector (game display output)
-- Speaker (audio feedback)
-- Vibration motor / haptic feedback module
-- USB power supply / wall power adapter
+- Webcam (connected to the machine running the game)
+- Seeed Studio XIAO ESP32S3 with 5 buttons and a vibration motor
+- LiPo battery or USB power source for the ESP32
 
 ---
 
-### Software Setup
+## Setup
 
-#### Raspberry Pi Side
-- Python
-- Pygame (game display and UI)
-- SQLite (local database storage)
+### 1. Flash the controller
 
-#### Controller Side
-- PlatformIO
-- Arduino framework
-- C++ firmware for ESP32S3
+Open the `controller/` folder in PlatformIO (VS Code with PlatformIO extension) and upload `src/main.cpp` to the XIAO ESP32S3. After flashing, the controller can be powered by battery — no USB needed to run.
 
-#### Development Tools
-- Visual Studio Code
-- GitHub for version control
+### 2. Start the gesture server
 
----
+From the project root:
+```
+python3 gesture_server.py
+```
 
-### Usage
+This starts the webcam, loads the YOLO pose model and gesture classifier, and opens a WebSocket on port 8765. Leave this running in the background.
 
-1. The user starts the MoveJoy game system.
-2. A sequence of actions is displayed on the projected screen.
-3. The user memorises the displayed actions.
-4. The user performs the actions using the motion-tracked controller or wristband.
-5. Motion data from the IMU sensor is sent to the Raspberry Pi for processing.
-6. The system checks whether the actions were performed correctly and in the correct order.
-7. Scores and performance metrics are stored locally for long-term trend analysis.
-8. Caregivers or healthcare professionals may review the collected performance trends to identify potential signs of cognitive decline.
+> On first run, `yolov8n-pose.pt` will be downloaded automatically (~6MB). Requires internet for this one-time download only.
 
----
+### 3. Start the game server
 
-## Current Development Status
+```
+cd game
+node --experimental-sqlite server.js
+```
 
-### Completed
-- Initial repository setup
-- PlatformIO ESP32 project setup
-- Python game prototype
-- Pygame display system
-- Mock controller interface
-- Basic action checking logic
+The game is now running at `http://localhost:3000`.
 
-### In Progress
-- IMU gesture detection
-- ESP32 to Raspberry Pi communication
-- SQLite database integration
-- Scoring and analytics system
+### 4. Open the game
+
+Open Chrome and go to `http://localhost:3000`.
+
+> Chrome is required — Web Bluetooth (for the controller) only works in Chrome.
 
 ---
 
-## Repository Structure
+## Connecting the controller
 
-```text
-moveJoy/
-│
-├── esp32_controller/
-│
-├── raspberry_pi/
-│   ├── main.py
-│   ├── display.py
-│   ├── controller_interface.py
-│   ├── game.py
-│   ├── scoring.py
-│   └── database.py
-│
-├── docs/
-│
-└── README.md
+1. Power on the ESP32 controller.
+2. On the game home screen, click **CONNECT**.
+3. Select **MoveJoy Controller** from the Bluetooth picker.
+4. The button will change to **CONNECTED**.
+
+After connecting once, the controller stays connected across page refreshes within the same browser session.
+
+---
+
+## Admin dashboard
+
+Go to `http://localhost:3000/admin` to view the cognitive monitoring dashboard — per-user accuracy trends and MCI risk flagging.
+
+---
+
+## Project structure
+
+```
+moveJoy_v2/
+├── game/
+│   ├── index.html          # main game (all screens)
+│   ├── server.js           # Express REST API server
+│   ├── db.js               # SQLite database logic
+│   ├── admin.html          # clinician dashboard
+│   ├── assets/             # images and icons
+│   ├── game_data.db        # player data (auto-created)
+│   └── package.json
+├── controller/
+│   └── src/main.cpp        # ESP32 BLE firmware (PlatformIO)
+├── gesture_server.py       # YOLO + Keras gesture WebSocket server
+├── gesture_model.keras     # trained gesture classifier
+├── gesture_labels.json     # gesture class labels
+├── yolov8n-pose.pt         # YOLO pose model
+├── collect_data.py         # tool: collect gesture training data
+├── train_model.py          # tool: retrain gesture classifier
+├── test_gesture.py         # tool: test gesture model live
+└── requirements.txt        # Python dependencies
 ```

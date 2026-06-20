@@ -3,238 +3,506 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MoveJoy – Caregiver Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>MoveJoy — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #FFE8A3; --white: #ffffff; --navy: #1a2f5a;
-    --pink: #F2547D; --teal: #7FD8C8; --yellow: #FFD166;
-    --card-bg: #FFF5CC; --gray-text: #8899aa;
+    --sidebar-bg:   #111827;
+    --sidebar-w:    280px;
+    --header-h:     60px;
+    --bg:           #f3f4f6;
+    --card-bg:      #ffffff;
+    --border:       #e5e7eb;
+    --text:         #111827;
+    --text-muted:   #6b7280;
+    --teal:         #0d9488;
+    --ok:           #16a34a;
+    --ok-bg:        #dcfce7;
+    --watch:        #d97706;
+    --watch-bg:     #fef3c7;
+    --flag:         #dc2626;
+    --flag-bg:      #fee2e2;
+    --monitor:      #2563eb;
+    --monitor-bg:   #dbeafe;
+    --baseline:     #6b7280;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); font-family: 'Nunito', sans-serif; color: var(--navy); min-height: 100vh; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  aside {
+    width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sidebar-logo { font-size: 18px; font-weight: 700; color: #fff; }
+  .sidebar-logo span { color: #2dd4bf; }
+  .sidebar-sub {
+    font-size: 11px; color: rgba(255,255,255,0.4);
+    margin-top: 2px; text-transform: uppercase; letter-spacing: 0.8px;
+  }
+
+  .sidebar-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .sidebar-search input {
+    width: 100%;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px; color: #fff; outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .sidebar-search input::placeholder { color: rgba(255,255,255,0.3); }
+
+  .sidebar-users { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .sidebar-users::-webkit-scrollbar { width: 4px; }
+  .sidebar-users::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-users::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+  .user-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .user-item:hover { background: rgba(255,255,255,0.06); }
+  .user-item.active {
+    background: rgba(45,212,191,0.12);
+    border-left: 3px solid #2dd4bf;
+    padding-left: 13px;
+  }
+  .user-item.active .user-item-name { color: #2dd4bf; }
+
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #1f2937; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #9ca3af; flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .user-item-info { flex: 1; min-width: 0; }
+  .user-item-name {
+    font-size: 13px; font-weight: 500; color: #e5e7eb;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .user-item-meta { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-ok       { background: #16a34a; }
+  .dot-watch    { background: #d97706; }
+  .dot-flag     { background: #dc2626; box-shadow: 0 0 6px rgba(220,38,38,0.6); }
+  .dot-monitor  { background: #2563eb; }
+  .dot-baseline { background: #6b7280; }
+
+  .sidebar-footer {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 11px; color: rgba(255,255,255,0.25); text-align: center;
+  }
+
+  main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
   header {
-    background: var(--white); border-bottom: 4px solid var(--navy);
-    padding: 16px 32px; display: flex; align-items: center; gap: 16px;
-    box-shadow: 0 4px 0 var(--navy);
-  }
-  header h1 { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--navy); }
-  header h1 span { color: var(--pink); }
-  header p { font-size: 14px; color: var(--gray-text); margin-top: 2px; }
-
-  .layout { display: flex; gap: 24px; padding: 24px; max-width: 1200px; margin: 0 auto; }
-
-  /* Player list */
-  .sidebar { width: 260px; flex-shrink: 0; }
-  .sidebar h2 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--navy); margin-bottom: 12px; }
-  .player-card {
-    background: var(--white); border: 3px solid var(--navy); border-radius: 16px;
-    padding: 14px 18px; margin-bottom: 10px; cursor: pointer;
-    box-shadow: 3px 3px 0 var(--navy); transition: transform .15s, box-shadow .15s;
-  }
-  .player-card:hover { transform: translateY(-2px); box-shadow: 3px 5px 0 var(--navy); }
-  .player-card.active { background: var(--teal); }
-  .player-card .p-name { font-family: 'Fredoka One', cursive; font-size: 18px; text-transform: capitalize; }
-  .player-card .p-meta { font-size: 13px; color: var(--gray-text); margin-top: 3px; }
-  .player-card.active .p-meta { color: var(--navy); }
-  .empty-state { color: var(--gray-text); font-size: 15px; text-align: center; padding: 20px; }
-
-  /* Main panel */
-  .main { flex: 1; }
-  .placeholder {
-    background: var(--white); border: 3px dashed #ccc; border-radius: 24px;
-    padding: 60px; text-align: center; color: var(--gray-text);
-    font-family: 'Fredoka One', cursive; font-size: 22px;
+    height: var(--header-h);
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 28px; gap: 16px; flex-shrink: 0;
   }
 
-  .stat-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-  .stat-card {
-    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
-    padding: 20px 24px; flex: 1; min-width: 140px; text-align: center;
-    box-shadow: 3px 3px 0 var(--navy);
-  }
-  .stat-card .s-label { font-size: 13px; color: var(--gray-text); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-  .stat-card .s-value { font-family: 'Fredoka One', cursive; font-size: 36px; color: var(--navy); margin: 6px 0 2px; }
-  .stat-card .s-sub { font-size: 13px; color: var(--gray-text); }
+  .header-title { font-size: 16px; font-weight: 600; }
+  .header-sub   { font-size: 13px; color: var(--text-muted); }
+  .header-spacer { flex: 1; }
 
-  .trend-badge {
-    display: inline-block; font-family: 'Fredoka One', cursive; font-size: 18px;
-    border: 3px solid var(--navy); border-radius: 50px; padding: 6px 20px;
-    box-shadow: 2px 2px 0 var(--navy);
+  .refresh-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; font-weight: 500;
+    color: var(--text-muted); cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s, color 0.15s;
   }
-  .trend-badge.Improving { background: #c8f7c5; color: #1b5e20; }
-  .trend-badge.Stable    { background: var(--yellow); color: var(--navy); }
-  .trend-badge.Declining { background: var(--pink); color: var(--white); }
-  .trend-badge.Unknown   { background: #eee; color: var(--gray-text); }
+  .refresh-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+  .content { flex: 1; overflow-y: auto; padding: 28px; }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; color: var(--text-muted); gap: 12px;
+  }
+  .empty-icon { font-size: 48px; opacity: 0.3; }
+  .empty-text { font-size: 15px; }
+
+  .status-banner {
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: flex-start; gap: 14px;
+    margin-bottom: 24px; border: 1px solid transparent;
+  }
+  .banner-ok       { background: var(--ok-bg);     border-color: #bbf7d0; }
+  .banner-watch    { background: var(--watch-bg);   border-color: #fde68a; }
+  .banner-flag     { background: var(--flag-bg);    border-color: #fca5a5; }
+  .banner-monitor  { background: var(--monitor-bg); border-color: #bfdbfe; }
+  .banner-baseline { background: #f9fafb;           border-color: var(--border); }
+
+  .banner-icon { font-size: 22px; line-height: 1; margin-top: 1px; }
+  .banner-label {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 3px;
+  }
+  .label-ok       { color: var(--ok); }
+  .label-watch    { color: var(--watch); }
+  .label-flag     { color: var(--flag); }
+  .label-monitor  { color: var(--monitor); }
+  .label-baseline { color: var(--baseline); }
+  .banner-subheading { font-size: 15px; font-weight: 700; color: var(--flag); margin-bottom: 4px; }
+  .banner-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  .cards {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .card-label {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px;
+  }
+  .card-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+  .card-value.change-positive { color: var(--ok); }
+  .card-value.change-negative { color: var(--flag); }
+  .card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
   .chart-card {
-    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
-    padding: 24px; margin-bottom: 20px; box-shadow: 3px 3px 0 var(--navy);
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 24px;
   }
-  .chart-card h3 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--pink); margin-bottom: 16px; }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .chart-title { font-size: 14px; font-weight: 600; }
+  .chart-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .chart-legend { display: flex; gap: 16px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .legend-swatch { width: 20px; height: 2px; border-radius: 2px; }
+  .chart-wrap { position: relative; height: 220px; }
 
-  .history-card {
-    background: var(--white); border: 3px solid var(--navy); border-radius: 20px;
-    padding: 24px; box-shadow: 3px 3px 0 var(--navy);
+  .methodology {
+    background: #f9fafb; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.6;
   }
-  .history-card h3 { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--teal); margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  th { text-align: left; font-family: 'Fredoka One', cursive; font-size: 15px; color: var(--gray-text); padding: 6px 12px; border-bottom: 2px solid #eee; }
-  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
-  tr:last-child td { border-bottom: none; }
-  .diff-pill {
-    display: inline-block; font-size: 12px; font-weight: 700; border-radius: 50px;
-    padding: 2px 10px; text-transform: uppercase;
-  }
-  .diff-pill.easy   { background: var(--teal);   color: var(--navy); }
-  .diff-pill.medium { background: var(--yellow);  color: var(--navy); }
-  .diff-pill.hard   { background: var(--pink);   color: var(--white); }
+  .methodology strong { color: var(--text); }
 
-  .panel-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
-  .panel-header h2 { font-family: 'Fredoka One', cursive; font-size: 28px; text-transform: capitalize; }
+  .no-sessions {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 40px;
+    text-align: center; color: var(--text-muted); font-size: 13px;
+    margin-bottom: 24px;
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>MOVE<span>JOY</span> 🏥 Caregiver Dashboard</h1>
-    <p>Track player performance and cognitive trends over time</p>
+<aside>
+  <div class="sidebar-header">
+    <div class="sidebar-logo">Move<span>Joy</span></div>
+    <div class="sidebar-sub">Admin Dashboard</div>
   </div>
-</header>
+  <div class="sidebar-search">
+    <input type="text" id="search-input" placeholder="Search participants…" oninput="filterUsers()">
+  </div>
+  <div class="sidebar-users" id="user-list"></div>
+  <div class="sidebar-footer" id="sidebar-footer">Loading…</div>
+</aside>
 
-<div class="layout">
-  <aside class="sidebar">
-    <h2>Players</h2>
-    <div id="player-list"><p class="empty-state">Loading...</p></div>
-  </aside>
-
-  <main class="main" id="main-panel">
-    <div class="placeholder">👈 Select a player to view their performance</div>
-  </main>
-</div>
+<main>
+  <header>
+    <div>
+      <div class="header-title" id="header-title">Select a participant</div>
+      <div class="header-sub" id="header-sub">Cognitive performance monitoring</div>
+    </div>
+    <div class="header-spacer"></div>
+    <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+  </header>
+  <div class="content" id="content">
+    <div class="empty-state">
+      <div class="empty-icon">👤</div>
+      <div class="empty-text">Select a participant from the sidebar to view their performance data.</div>
+    </div>
+  </div>
+</main>
 
 <script>
-let trendChart = null;
+let allUsers = [];
+let activeUserId = null;
+let accuracyChart = null;
 
-async function loadPlayers() {
-  const res = await fetch('/api/users');
-  const users = await res.json();
-  const list = document.getElementById('player-list');
+const STATUS_CONFIG = {
+  flag: {
+    dot: 'dot-flag', banner: 'banner-flag', label: 'label-flag', icon: '⚠️',
+    title: 'Recommend Review',
+    desc: "Recent trends show a higher likelihood of cognitive change.<br><br>Changes in cognitive functioning can be caused by many factors, and does not confirm a medical condition. It may be helpful to discuss recent lifestyle or new and adjusted medications with your ward, and seek further advice from a healthcare professional if necessary. Early intervention can help identify potential causes and appropriate next steps.",
+  },
+  watch: {
+    dot: 'dot-watch', banner: 'banner-watch', label: 'label-watch', icon: '👁',
+    title: 'Watch',
+    desc: "A modest decline in accuracy has been observed over the past two weeks compared to this participant's baseline. Continue monitoring — if the trend persists, consider a clinical check-in.",
+  },
+  ok: {
+    dot: 'dot-ok', banner: 'banner-ok', label: 'label-ok', icon: '✓',
+    title: 'No Concerns',
+    desc: "Performance is stable relative to this participant's personal baseline. No action required.",
+  },
+  monitoring: {
+    dot: 'dot-monitor', banner: 'banner-monitor', label: 'label-monitor', icon: 'ℹ',
+    title: 'Monitoring',
+    desc: 'Baseline data is still accumulating. Trend analysis will activate after 4 weeks of play with at least 8 sessions.',
+  },
+  building_baseline: {
+    dot: 'dot-baseline', banner: 'banner-baseline', label: 'label-baseline', icon: '📊',
+    title: 'Building Baseline',
+    desc: 'This participant has been playing for less than 2 weeks. The system is collecting initial baseline data — no trend analysis is available yet.',
+  },
+};
 
-  if (users.length === 0) {
-    list.innerHTML = '<p class="empty-state">No players yet.<br>Play a game first!</p>';
-    return;
-  }
-
-  list.innerHTML = users.map(u => `
-    <div class="player-card" id="pc-${u.id}" onclick="loadStats(${u.id})">
-      <div class="p-name">🧑 ${u.name}</div>
-      <div class="p-meta">${u.session_count} session${u.session_count !== 1 ? 's' : ''} · ${u.last_played ? formatDate(u.last_played) : 'No sessions yet'}</div>
-    </div>`).join('');
-}
-
-async function loadStats(userId) {
-  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
-  document.getElementById(`pc-${userId}`).classList.add('active');
-
-  const res = await fetch(`/api/users/${userId}/stats`);
-  const { user, sessions, stats } = await res.json();
-  const panel = document.getElementById('main-panel');
-
-  if (!stats) {
-    panel.innerHTML = `
-      <div class="panel-header"><h2>🧑 ${user.name}</h2></div>
-      <div class="placeholder">No sessions recorded yet for this player.</div>`;
-    return;
-  }
-
-  const trendEmoji = { Improving: '📈', Stable: '➡️', Declining: '📉' };
-
-  panel.innerHTML = `
-    <div class="panel-header">
-      <h2>🧑 ${user.name}</h2>
-      <span class="trend-badge ${stats.trend}">${trendEmoji[stats.trend] || ''} ${stats.trend}</span>
-    </div>
-
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="s-label">Total Sessions</div>
-        <div class="s-value">${stats.totalSessions}</div>
-      </div>
-      <div class="stat-card">
-        <div class="s-label">Best Score</div>
-        <div class="s-value">${stats.bestScore}<span style="font-size:18px;color:var(--gray-text)">/${sessions[0].sequence_length}</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="s-label">Avg Accuracy</div>
-        <div class="s-value">${Math.round(stats.avgAccuracy * 100)}<span style="font-size:20px">%</span></div>
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <h3>Score Trend Over Time</h3>
-      <canvas id="trend-chart" height="100"></canvas>
-    </div>
-
-    <div class="history-card">
-      <h3>Session History</h3>
-      <table>
-        <thead><tr><th>#</th><th>Date</th><th>Score</th><th>Accuracy</th><th>Difficulty</th></tr></thead>
-        <tbody>
-          ${[...sessions].reverse().map((s, i) => `
-            <tr>
-              <td>${sessions.length - i}</td>
-              <td>${formatDate(s.played_at)}</td>
-              <td>${s.score} / ${s.sequence_length}</td>
-              <td>${Math.round(s.score / s.sequence_length * 100)}%</td>
-              <td><span class="diff-pill ${s.difficulty}">${s.difficulty}</span></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-
-  renderChart(sessions);
-}
-
-function renderChart(sessions) {
-  if (trendChart) { trendChart.destroy(); trendChart = null; }
-
-  const labels = sessions.map((s, i) => `#${i + 1}`);
-  const accuracies = sessions.map(s => Math.round(s.score / s.sequence_length * 100));
-
-  trendChart = new Chart(document.getElementById('trend-chart'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Accuracy %',
-        data: accuracies,
-        borderColor: '#F2547D',
-        backgroundColor: 'rgba(242,84,125,0.1)',
-        borderWidth: 3,
-        pointBackgroundColor: '#F2547D',
-        pointRadius: 5,
-        tension: 0.3,
-        fill: true,
-      }]
-    },
-    options: {
-      scales: {
-        y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
-      },
-      plugins: { legend: { display: false } }
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/admin/dashboard');
+    allUsers = await res.json();
+    renderSidebar();
+    if (activeUserId) {
+      const user = allUsers.find(u => u.id === activeUserId);
+      if (user) renderDetail(user);
     }
+    const time = new Date().toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('sidebar-footer').textContent =
+      `${allUsers.length} participant${allUsers.length !== 1 ? 's' : ''} · Updated ${time}`;
+  } catch (err) {
+    document.getElementById('sidebar-footer').textContent = 'Failed to load data';
+    console.error(err);
+  }
+}
+
+function filterUsers() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  document.querySelectorAll('.user-item').forEach(el => {
+    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
   });
 }
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+function renderSidebar() {
+  const list = document.getElementById('user-list');
+  list.innerHTML = '';
+  allUsers.forEach(u => {
+    const cfg = STATUS_CONFIG[u.status] || STATUS_CONFIG.building_baseline;
+    const initials = u.name.slice(0, 2).toUpperCase();
+    const lastPlayed = u.last_played
+      ? new Date(u.last_played).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
+      : 'Never';
+    const el = document.createElement('div');
+    el.className = 'user-item' + (u.id === activeUserId ? ' active' : '');
+    el.dataset.name = u.name.toLowerCase();
+    el.innerHTML = `
+      <div class="user-avatar">${initials}</div>
+      <div class="user-item-info">
+        <div class="user-item-name">${cap(u.name)}</div>
+        <div class="user-item-meta">${u.session_count} session${u.session_count !== 1 ? 's' : ''} · ${lastPlayed}</div>
+      </div>
+      <div class="status-dot ${cfg.dot}"></div>
+    `;
+    el.onclick = () => { activeUserId = u.id; renderSidebar(); renderDetail(u); };
+    list.appendChild(el);
+  });
 }
 
-loadPlayers();
+function renderDetail(user) {
+  const cfg = STATUS_CONFIG[user.status] || STATUS_CONFIG.building_baseline;
+
+  document.getElementById('header-title').textContent = cap(user.name);
+  document.getElementById('header-sub').textContent =
+    `${user.session_count} session${user.session_count !== 1 ? 's' : ''} · ${user.days_active} days active`;
+
+  const fmt = iso => iso
+    ? new Date(iso).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
+
+  const changeHtml = user.change !== null
+    ? `<div class="card-value ${user.change >= 0 ? 'change-positive' : 'change-negative'}">${user.change > 0 ? '+' : ''}${user.change}%</div>
+       <div class="card-sub">vs. personal baseline</div>`
+    : `<div class="card-value" style="font-size:15px;color:var(--text-muted);font-weight:500;padding-top:6px">Not yet available</div>
+       <div class="card-sub">Requires 4+ weeks of data</div>`;
+
+  const hasSessions = user.sessions && user.sessions.length >= 2;
+
+  document.getElementById('content').innerHTML = `
+    <div class="status-banner ${cfg.banner}">
+      <div class="banner-icon">${cfg.icon}</div>
+      <div>
+        <div class="banner-label ${cfg.label}">${cfg.title}</div>
+        ${user.status === 'flag' ? '<div class="banner-subheading">High risk</div>' : ''}
+        <div class="banner-desc">${cfg.desc}</div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Total Sessions</div>
+        <div class="card-value">${user.session_count}</div>
+        <div class="card-sub">Since ${fmt(user.first_played)}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Avg. Accuracy</div>
+        <div class="card-value">${user.avg_accuracy !== null ? user.avg_accuracy + '%' : '—'}</div>
+        <div class="card-sub">Hits ÷ total notes</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Accuracy Change</div>
+        ${changeHtml}
+      </div>
+      <div class="card">
+        <div class="card-label">Last Played</div>
+        <div class="card-value" style="font-size:18px;padding-top:4px">${fmt(user.last_played)}</div>
+        <div class="card-sub">${user.days_active} days since first session</div>
+      </div>
+    </div>
+
+    ${hasSessions ? `
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Accuracy Trend</div>
+          <div class="chart-subtitle">Hit rate per session — last 30 sessions shown</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#0d9488"></div> Accuracy
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#d1d5db"></div> 7-session avg
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="accuracy-chart"></canvas></div>
+    </div>
+    ` : `
+    <div class="no-sessions">
+      Not enough sessions to display a trend chart yet.<br>
+      Performance data will appear here after a few more play sessions.
+    </div>
+    `}
+
+    <div class="methodology">
+      <strong>How flagging works:</strong> The system compares average accuracy during the participant's
+      first 2 weeks of play (baseline) against their most recent 2 weeks. Flagging activates only after
+      28 days of play with at least 8 sessions and at least 3 sessions in each comparison window.
+      A decline of 10–19% shows <strong>Watch</strong>; 20%+ triggers <strong>Recommend Review</strong>.
+      This is a monitoring aid — all flags must be reviewed by a qualified clinician before any action is taken.
+      <br><br><em>*Disclaimer: This assessment estimates the risk of MCI and obtaining a high risk should NOT be used as a diagnosis. A high risk result should be followed by a thorough assessment by a healthcare professional.</em>
+    </div>
+  `;
+
+  if (hasSessions) renderChart(user.sessions);
+}
+
+function renderChart(sessions) {
+  if (accuracyChart) { accuracyChart.destroy(); accuracyChart = null; }
+
+  const data = sessions.slice(-30);
+  const labels = data.map(s =>
+    new Date(s.played_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
+  );
+  const values = data.map(s => s.accuracy);
+  const rolling = values.map((_, i) => {
+    const w = values.slice(Math.max(0, i - 6), i + 1);
+    return Math.round(w.reduce((a, b) => a + b, 0) / w.length);
+  });
+
+  const ctx = document.getElementById('accuracy-chart').getContext('2d');
+  accuracyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Accuracy',
+          data: values,
+          borderColor: '#0d9488',
+          backgroundColor: 'rgba(13,148,136,0.08)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#0d9488',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: '7-session avg',
+          data: rolling,
+          borderColor: '#d1d5db',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          titleColor: '#e5e7eb',
+          bodyColor: '#9ca3af',
+          padding: 10,
+          callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 11 }, color: '#9ca3af', maxRotation: 45 },
+        },
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 11 }, color: '#9ca3af', callback: v => v + '%', stepSize: 20 },
+        },
+      },
+    },
+  });
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+loadDashboard();
 </script>
 </body>
 </html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "movejoy-game",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--experimental-sqlite", "game/server.js"],
+      "port": 3000
+    }
+  ]
+}

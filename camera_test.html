@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><title>Camera Test</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:20px">
+  <h2>Camera Test</h2>
+  <select id="camList" style="font-size:16px;padding:6px;margin-bottom:12px"></select>
+  <br>
+  <video id="vid" autoplay playsinline style="width:480px;border:2px solid #333;background:#000"></video>
+  <p id="status"></p>
+  <script>
+    const sel = document.getElementById('camList');
+    const vid = document.getElementById('vid');
+    const status = document.getElementById('status');
+    let currentStream = null;
+
+    async function listCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      sel.innerHTML = cams.map((c, i) => `<option value="${c.deviceId}">${c.label || 'Camera ' + i}</option>`).join('');
+    }
+
+    async function startCamera(deviceId) {
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: deviceId ? { deviceId: { exact: deviceId } } : true
+        });
+        vid.srcObject = currentStream;
+        status.textContent = 'Streaming OK';
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    sel.addEventListener('change', () => startCamera(sel.value));
+
+    (async () => {
+      // Trigger permission prompt + populate labels
+      const tmp = await navigator.mediaDevices.getUserMedia({ video: true });
+      tmp.getTracks().forEach(t => t.stop());
+      await listCameras();
+      if (sel.value) startCamera(sel.value);
+    })();
+  </script>
+</body>
+</html>
